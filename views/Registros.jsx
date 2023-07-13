@@ -2,16 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, TouchableOpacity} from 'react-native';
 import openMyDatabase from '../config';
 import { useNavigation } from '@react-navigation/native'; 
+import { Search } from '../components';
 
 const Registros = () => {
     const [data, setData] = useState([]);
+
+    const [filteredData, setFilteredData] = useState([]);
+
+    const filtrarRegistros = (data) => {
+      setFilteredData(data);
+    };
 
     const db = openMyDatabase.getConnection()
 
     const getData = () => {
       db.transaction(
           (tx) => {
-              tx.executeSql('SELECT name, id, date FROM pacientes', [], (_, { rows: { _array } }) => setData(_array));
+              tx.executeSql('SELECT cedula, name, date FROM personas', [], (_, { rows: { _array } }) => {
+                console.log("registros", _array)
+                setData(_array)
+              });
           },
           ({ tx, error }) => {
               console.log(error);
@@ -30,6 +40,10 @@ const Registros = () => {
 
     const navigation = useNavigation();
 
+    const navigatetoSettings = () =>{
+      navigation.navigate ('Settings');
+    };
+
     const actualizarRegistros = () => {
       getData();
     };
@@ -38,10 +52,10 @@ const Registros = () => {
       navigation.navigate('Formulario', { actualizarRegistros } );
     };
 
-    const editarPaciente = (id) => {
-      const paciente = data.find ((item) => item.id === id);
+    const editarPaciente = (cedula) => {
+      const paciente = data.find ((item) => item.cedula === cedula);
       if (paciente) {
-        navigation.navigate ( 'Formulario', { id } )
+        navigation.navigate ( 'Formulario', { cedula } )
       }
     }
 
@@ -56,18 +70,21 @@ const Registros = () => {
               <Text style={styles.logoutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
       </View> 
-        <Text style={styles.title}>Registros</Text>
+        <Text style={styles.title}>Formularios de Examén</Text>
         <Button title='Registrar nuevo paciente' onPress={navigateToFormulario}/>
         <Button title='Actualizar Registros' onPress={actualizarRegistros}/>
+
+        <Search setData={setData}/>
+        {/* <Button title='Creación y Eliminación de Tabla' onPress={navigatetoSettings}/> */}
         {data.map((item, index) => (
           <TouchableOpacity 
-            key={item.id}
+            key={item.cedula}
             style={styles.row}
-            onPress={() => editarPaciente(item.id)}
+            onPress={() => editarPaciente(item.cedula)}
           >
           {/* </TouchableOpacity><View style={styles.row} key={index}> */}
             <Text style={styles.column}>{item.name}</Text>
-            <Text style={styles.column}>{item.id}</Text>
+            <Text style={styles.column}>{item.cedula}</Text>
             <Text style={styles.column}>{item.date}</Text>
             {/* Agrega aquí más columnas si lo deseas */}
           </TouchableOpacity>
@@ -85,6 +102,7 @@ const Registros = () => {
       fontSize: 20,
       fontWeight: 'bold',
       marginBottom: 20,
+    
     },
     row: {
       flexDirection: 'row',
